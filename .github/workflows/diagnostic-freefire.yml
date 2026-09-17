@@ -31,7 +31,7 @@ jobs:
           if s.count(needle) != 1:
               raise SystemExit("No se encontró el punto correcto para insertar el diagnóstico")
 
-          patch = needle + '''    if ([identifier isEqualToString:@"com.dts.freefireth"]) {
+          patch = needle + '''    if ([identifier isEqualToString:@"com.apple.mobilesafari"]) {
               NSString *detail = target
                   ? [NSString stringWithFormat:@"Identifier: %@\\nClass: %llu\\nResult: SUCCESS\\nTarget: %@\\n",
                      identifier, containerClass, target]
