@@ -21,12 +21,11 @@ jobs:
       - name: Download official FilzaSlop base IPA
         run: |
           curl -L \
-          -o FilzaSlop-v1.2.0-unsigned.ipa \
-          https://github.com/0xjohnnydev/FilzaSlop/releases/download/v1.2.0/FilzaSlop-v1.2.0-unsigned.ipa
+            -o FilzaSlop-v1.2.0-unsigned.ipa \
+            https://github.com/0xjohnnydev/FilzaSlop/releases/download/v1.2.0/FilzaSlop-v1.2.0-unsigned.ipa
 
       - name: Build custom Free Fire IPA
         env:
-         
           FILZASLOP_VERSION: v1.2.0-freefire
         run: |
           export THEOS="$HOME/theos"
@@ -36,6 +35,16 @@ jobs:
             FilzaSlop-FreeFire-unsigned.ipa \
             MCMIdentifiers.plist
 
+      - name: Verify Free Fire target
+        run: |
+          echo "Buscando MCMIdentifiers.plist dentro del IPA..."
+          unzip -l FilzaSlop-FreeFire-unsigned.ipa | grep MCMIdentifiers.plist
+          echo "Contenido del archivo:"
+          unzip -p FilzaSlop-FreeFire-unsigned.ipa Payload/Filza.app/MCMIdentifiers.plist
+          echo "Verificando Free Fire..."
+          unzip -p FilzaSlop-FreeFire-unsigned.ipa Payload/Filza.app/MCMIdentifiers.plist | grep -q "com.dts.freefireth"
+          echo "FREE FIRE ENCONTRADO CORRECTAMENTE"
+    
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
