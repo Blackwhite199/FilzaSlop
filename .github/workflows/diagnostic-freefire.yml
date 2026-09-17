@@ -1,0 +1,75 @@
+name: Diagnose Free Fire
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew install ldid xz
+          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
+
+      - name: Add Free Fire diagnostic
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          p = Path("MCMFilzaIntegration.m")
+          s = p.read_text()
+
+          needle = '    NSString *target = MCMActivate(containerClass, identifier, group, &error);\n'
+
+          if s.count(needle) != 1:
+              raise SystemExit("No se encontró el punto correcto para insertar el diagnóstico")
+
+          patch = needle + '''    if ([identifier isEqualToString:@"com.dts.freefireth"]) {
+              NSString *detail = target
+                  ? [NSString stringWithFormat:@"Identifier: %@\\nClass: %llu\\nResult: SUCCESS\\nTarget: %@\\n",
+                     identifier, containerClass, target]
+                  : [NSString stringWithFormat:@"Identifier: %@\\nClass: %llu\\nResult: FAILED\\nDetail: %@\\n",
+                     identifier, containerClass, error ?: @"(none)"];
+
+              NSString *diagnosticPath =
+                  [directory stringByAppendingPathComponent:@"FreeFire-Diagnostic.txt"];
+
+              [detail writeToFile:diagnosticPath
+                       atomically:YES
+                         encoding:NSUTF8StringEncoding
+                            error:nil];
+          }
+          '''
+
+          p.write_text(s.replace(needle, patch, 1))
+          PY
+
+      - name: Download official FilzaSlop base IPA
+        run: |
+          curl -L \
+            -o FilzaSlop-v1.2.0-unsigned.ipa \
+            https://github.com/0xjohnnydev/FilzaSlop/releases/download/v1.2.0/FilzaSlop-v1.2.0-unsigned.ipa
+
+      - name: Build diagnostic IPA
+        env:
+          FILZASLOP_VERSION: v1.2.0-freefire-diagnostic
+        run: |
+          export THEOS="$HOME/theos"
+          chmod +x scripts/build_release_ipa.sh
+          ./scripts/build_release_ipa.sh \
+            FilzaSlop-v1.2.0-unsigned.ipa \
+            FilzaSlop-FreeFire-Diagnostic-unsigned.ipa \
+            MCMIdentifiers.plist
+
+      - name: Upload diagnostic IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: FilzaSlop-FreeFire-Diagnostic
+          path: FilzaSlop-FreeFire-Diagnostic-unsigned.ipa
