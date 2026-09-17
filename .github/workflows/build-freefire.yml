@@ -1,0 +1,43 @@
+name: Build FilzaSlop Free Fire
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew install ldid xz
+          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
+
+      - name: Download official FilzaSlop base IPA
+        run: |
+          curl -L \
+          -o FilzaSlop-v1.2.0-unsigned.ipa \
+          https://github.com/0xjohnnydev/FilzaSlop/releases/download/v1.2.0/FilzaSlop-v1.2.0-unsigned.ipa
+
+      - name: Build custom Free Fire IPA
+        env:
+         
+          FILZASLOP_VERSION: v1.2.0-freefire
+        run: |
+          export THEOS="$HOME/theos"
+          chmod +x scripts/build_release_ipa.sh
+          ./scripts/build_release_ipa.sh \
+            FilzaSlop-v1.2.0-unsigned.ipa \
+            FilzaSlop-FreeFire-unsigned.ipa \
+            MCMIdentifiers.plist
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: FilzaSlop-FreeFire
+          path: FilzaSlop-FreeFire-unsigned.ipa
