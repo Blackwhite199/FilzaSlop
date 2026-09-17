@@ -3,9 +3,10 @@
 <plist version="1.0">
 <dict>
     <key>AppData</key>
-    <array>
-        <string>com.dts.freefireth</string>
-    </array>
+<array>
+    <string>com.dts.freefireth</string>
+    <string>com.apple.mobilesafari</string>
+</array>
 
     <key>AppGroups</key>
     <array/>
